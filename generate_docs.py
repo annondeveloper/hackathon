@@ -7,6 +7,7 @@ Usage:
 Outputs:
     docs/ClaimClear_AI_README.docx
     docs/ClaimClear_AI_Architecture.docx
+    docs/ClaimClear_AI_Architecture_Diagram.docx
     docs/ClaimClear_AI_Deployment_Guide.docx
     docs/ClaimClear_AI_Design_Decisions.docx
 """
@@ -217,7 +218,14 @@ def main():
         else:
             print(f"  Skipped: {md_file} (not found)")
 
-    print(f"\nDone! {len(documents)} documents generated in docs/")
+    # Generate the architecture diagram (visual box diagrams)
+    try:
+        from create_architecture_diagram import create_diagram
+        create_diagram()
+    except Exception as exc:
+        print(f"  Architecture diagram: {exc}")
+
+    print(f"\nDone! {len(documents) + 1} documents generated in docs/")
 
 
 if __name__ == "__main__":

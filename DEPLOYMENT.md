@@ -30,11 +30,15 @@ source venv/bin/activate        # macOS / Linux
 # 3. Install dependencies
 pip install -r requirements.txt
 
-# 4. (Optional) Configure API key via environment
+# 4. Generate the policy PDF (RAG source document)
+python create_policy_pdf.py
+# Creates: docs/SilverShield_Master_Policy.pdf
+
+# 5. (Optional) Configure API key via environment
 cp .env.example .env
 # Edit .env and set: OPENAI_API_KEY=sk-your-key-here
 
-# 5. Run the application
+# 6. Run the application
 streamlit run app.py
 ```
 
@@ -43,21 +47,26 @@ The app opens at **http://localhost:8501**.
 ### Quick Verification
 
 1. The app loads with the ClaimClear AI header
-2. Select a sample claim from the dropdown (e.g., "Denied Health — Out-of-Network")
-3. Click "Generate Explanation"
-4. In demo mode (no API key): a pre-built explanation appears instantly
-5. With an API key: the 4-stage pipeline runs and shows real-time progress
+2. Sidebar shows "Policy Document" section with PDF download button
+3. Select a sample claim from the dropdown (e.g., "Denied Health — Out-of-Network")
+4. Click "Generate Explanation"
+5. In demo mode (no API key): a pre-built explanation appears with RAG citations
+6. With an API key: the 5-stage pipeline runs with real-time progress
+7. Check "Show RAG citations" to see policy PDF page references
+8. Check "Show pipeline details" to see each stage's output
 
 ### Configuration Options
 
 | Setting | Where | Description |
 |---------|-------|-------------|
+| Model | Sidebar dropdown | OpenAI GPT-4o-mini (default), GPT-4o, TCS GenAI Lab |
 | API Key | Sidebar password field | Entered at runtime, stays in memory only |
-| API Key | `.env` file | Loaded on startup via `python-dotenv` |
-| Model | Sidebar dropdown | `gpt-4o-mini` (default) or `gpt-4o` |
-| Tone | Sidebar dropdown | Simple & Friendly, Professional, Technical |
+| Custom Base URL | Sidebar text input | For custom OpenAI-compatible endpoints |
+| Tone | Sidebar dropdown | Simple and Friendly, Professional, Technical |
 | Reading Level | Sidebar dropdown | Basic, Intermediate, Advanced |
-| Pipeline Details | Sidebar checkbox | Show/hide per-stage output |
+| Show Pipeline Details | Sidebar checkbox | Show/hide per-stage output |
+| Show RAG Citations | Sidebar checkbox | Show/hide source document citations |
+| Policy PDF | Sidebar download | Download the SilverShield Master Policy |
 
 ---
 
@@ -75,8 +84,14 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy application code
-COPY app.py pipeline.py policy_store.py sample_data.py ./
+COPY app.py pipeline.py policy_store.py sample_data.py create_policy_pdf.py ./
 COPY .env.example .env.example
+
+# Generate the policy PDF
+RUN mkdir -p docs && python create_policy_pdf.py
+
+# Copy docs
+COPY docs/ docs/
 
 # Expose Streamlit port
 EXPOSE 8501
@@ -98,10 +113,10 @@ CMD ["streamlit", "run", "app.py", \
 # Build the image
 docker build -t claimclear-ai .
 
-# Run with API key
+# Run with API key (full agentic pipeline + vector RAG)
 docker run -p 8501:8501 -e OPENAI_API_KEY=sk-your-key claimclear-ai
 
-# Run in demo mode (no key)
+# Run in demo mode (no key, keyword RAG fallback)
 docker run -p 8501:8501 claimclear-ai
 ```
 
@@ -187,6 +202,7 @@ docker push $ECR_URI/claimclear-ai:latest
 | Variable | Required | Default | Description |
 |----------|----------|---------|-------------|
 | `OPENAI_API_KEY` | No | — | OpenAI API key. Can also be entered in the UI sidebar. |
+| `OPENAI_BASE_URL` | No | — | Custom API endpoint for TCS GenAI Lab or other providers. |
 
 No other environment variables are needed. All configuration is done through
 the Streamlit sidebar at runtime.
@@ -213,7 +229,9 @@ The Dockerfile includes a built-in health check that runs every 30 seconds.
 3. Enter your API key in the sidebar
 4. Click "Generate Explanation"
 5. Verify all 4 quality scores appear
-6. Check "Show pipeline details" to confirm all stages completed
+6. Check "Show RAG citations" to see policy PDF references
+7. Check "Show pipeline details" to confirm all stages completed
+8. Download the policy PDF from the sidebar to verify it's accessible
 
 ---
 
@@ -222,8 +240,11 @@ The Dockerfile includes a built-in health check that runs every 30 seconds.
 | Issue | Solution |
 |-------|---------|
 | `ModuleNotFoundError: streamlit` | Run `pip install -r requirements.txt` in your venv |
+| `ModuleNotFoundError: langchain` | Run `pip install -r requirements.txt` — LangChain and ChromaDB are now required |
+| Policy PDF not found warning | Run `python create_policy_pdf.py` to generate the PDF |
 | `openai.AuthenticationError` | Check your API key is valid and has credits |
 | `openai.RateLimitError` | Wait 60 seconds or upgrade your OpenAI plan |
+| RAG shows "keyword" instead of "vector" | Add API key to enable OpenAI embeddings for vector search |
 | Port 8501 in use | Run `streamlit run app.py --server.port=8502` |
 | Blank page in browser | Clear browser cache or try incognito mode |
 | Docker build fails | Ensure Docker is running and you have internet access |
@@ -235,9 +256,13 @@ The Dockerfile includes a built-in health check that runs every 30 seconds.
 
 | Package | Version | Purpose |
 |---------|---------|---------|
-| `streamlit` | 1.41.0 | Web UI framework |
-| `openai` | ≥1.50.0 | OpenAI API client (chat completions, JSON mode) |
-| `python-dotenv` | ≥1.0.0 | Load `.env` file for API key |
-
-All dependencies are pure Python — no system-level packages or compilers
-needed.
+| `streamlit` | >=1.41.0 | Web UI framework |
+| `openai` | >=1.50.0 | OpenAI API client (chat completions, JSON mode) |
+| `python-dotenv` | >=1.0.0 | Load `.env` file for API key |
+| `langchain` | >=1.0.0 | RAG framework — document loading, text splitting |
+| `langchain-openai` | >=1.0.0 | OpenAI embeddings integration for ChromaDB |
+| `langchain-community` | >=0.4.0 | PyPDFLoader and ChromaDB vector store |
+| `langchain-text-splitters` | >=1.0.0 | RecursiveCharacterTextSplitter |
+| `chromadb` | >=1.0.0 | In-memory vector database for semantic search |
+| `PyPDF2` | >=3.0.0 | PDF text extraction for RAG ingestion |
+| `tiktoken` | >=0.7.0 | Token counting for OpenAI models |
