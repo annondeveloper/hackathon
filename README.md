@@ -48,9 +48,10 @@ terms and quality-checked before delivery.
 ### Install & Run
 
 ```bash
-# Clone the repository
+# Clone the repository and switch to the correct branch
 git clone https://github.com/annondeveloper/hackathon.git
 cd hackathon
+git checkout claude/ai-prototype-challenge-oTxa2
 
 # Create virtual environment
 python -m venv venv
