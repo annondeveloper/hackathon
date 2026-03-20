@@ -23,36 +23,54 @@ st.set_page_config(
 # ---------------------------------------------------------------------------
 st.markdown("""
 <style>
+/* ── Header banner (always dark bg, white text) ── */
 .main-header {
     background: linear-gradient(135deg, #0f4c81 0%, #17a2b8 100%);
-    padding: 2rem 2.5rem; border-radius: 12px; color: white; margin-bottom: 1.5rem;
+    padding: 2rem 2.5rem; border-radius: 12px; color: #ffffff; margin-bottom: 1.5rem;
 }
-.main-header h1 { margin: 0; font-size: 2.2rem; }
-.main-header p  { margin: 0.4rem 0 0; opacity: 0.9; font-size: 1.1rem; }
+.main-header h1 { margin: 0; font-size: 2.2rem; color: #ffffff !important; }
+.main-header p  { margin: 0.4rem 0 0; opacity: 0.9; font-size: 1.1rem; color: #ffffff !important; }
+
+/* ── Result card ── */
 .result-card {
-    background: #f8fbff; border-left: 4px solid #17a2b8;
+    background: var(--secondary-background-color, #f8fbff);
+    border-left: 4px solid #17a2b8;
     padding: 1.5rem; border-radius: 8px; margin: 1rem 0;
+    color: var(--text-color, #333333);
 }
+
+/* ── Glossary terms ── */
 .glossary-term {
-    background: #eef6fb; padding: 0.6rem 1rem;
-    border-radius: 6px; margin: 0.4rem 0;
+    background: var(--secondary-background-color, #eef6fb);
+    padding: 0.6rem 1rem; border-radius: 6px; margin: 0.4rem 0;
+    color: var(--text-color, #333333);
 }
+.glossary-term strong { color: var(--text-color, #333333); }
+
+/* ── Metric cards ── */
 .metric-card {
-    background: white; border: 1px solid #e0e0e0;
+    background: var(--secondary-background-color, #ffffff);
+    border: 1px solid var(--secondary-background-color, #e0e0e0);
     border-radius: 10px; padding: 1.2rem; text-align: center;
 }
-.metric-card h3 { color: #0f4c81; margin: 0; font-size: 2rem; }
-.metric-card p  { color: #666; margin: 0.2rem 0 0; font-size: 0.85rem; }
+.metric-card h3 { color: #17a2b8 !important; margin: 0; font-size: 2rem; }
+.metric-card p  { color: var(--text-color, #666666); margin: 0.2rem 0 0; font-size: 0.85rem; opacity: 0.8; }
+
+/* ── Pipeline info bar ── */
+.pipeline-info {
+    background: var(--secondary-background-color, #f0f7ff);
+    border: 1px solid var(--secondary-background-color, #b8d4f0);
+    border-radius: 8px; padding: 1rem; margin: 0.5rem 0;
+    color: var(--text-color, #333333);
+}
+
+/* ── Stage badges ── */
 .stage-badge {
     display: inline-block; padding: 0.2rem 0.6rem; border-radius: 12px;
     font-size: 0.75rem; font-weight: 600; margin: 0.1rem;
 }
 .stage-done { background: #d4edda; color: #155724; }
 .stage-active { background: #fff3cd; color: #856404; }
-.pipeline-info {
-    background: #f0f7ff; border: 1px solid #b8d4f0;
-    border-radius: 8px; padding: 1rem; margin: 0.5rem 0;
-}
 </style>
 """, unsafe_allow_html=True)
 
@@ -273,10 +291,15 @@ result = st.session_state.pipeline_result
 
 if result:
     st.subheader("📄 Generated Explanation")
-    st.markdown(
-        f'<div class="result-card">{result.explanation}</div>',
-        unsafe_allow_html=True,
-    )
+    # Use a Streamlit container with custom styling instead of raw HTML
+    # so that markdown formatting (bold, lists) renders correctly.
+    with st.container():
+        st.markdown(
+            '<div class="result-card">',
+            unsafe_allow_html=True,
+        )
+        st.markdown(result.explanation)
+        st.markdown("</div>", unsafe_allow_html=True)
 
     # --- Quality metrics ---
     ev = result.evaluation
