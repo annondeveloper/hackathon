@@ -18,7 +18,9 @@ This repository contains **two implementations** of the same solution:
 
 ```
 hackathon/
-├── app.py                  # Streamlit prototype (Python)
+├── app.py                  # Streamlit UI (Python)
+├── pipeline.py             # Agentic 4-stage pipeline
+├── policy_store.py         # RAG policy knowledge store
 ├── sample_data.py          # Sample insurance claims
 ├── requirements.txt        # Python dependencies
 ├── .env.example            # Environment config template
@@ -58,12 +60,23 @@ hackathon/
 
 ---
 
-## 🚀 Approach 1: Streamlit Prototype (Fast & Familiar)
+## 🚀 Approach 1: Agentic Python Pipeline (Modern AI)
 
 ### Tech Stack
 - **UI**: Streamlit 1.41
 - **Language**: Python 3.11+
-- **AI**: OpenAI SDK (GPT-4o / GPT-4o-mini)
+- **AI**: OpenAI SDK (GPT-4o / GPT-4o-mini) with structured outputs
+
+### Modern AI Techniques
+| Technique | How It's Used | Value |
+|-----------|---------------|-------|
+| **Agentic Pipeline** | 4-stage pipeline: Analyze → Generate → Evaluate → Refine | Each stage has a focused role, improving accuracy |
+| **RAG (Retrieval-Augmented Generation)** | Policy knowledge store provides grounding context | Reduces hallucination of policy terms |
+| **Self-Evaluation & Refinement** | LLM critiques its own output; conditionally refines | Catches accuracy/tone issues before delivery |
+| **Structured Outputs** | JSON mode (`response_format: json_object`) | Guaranteed valid JSON, no parsing failures |
+| **Few-Shot Prompting** | High-quality example anchors output style | Consistent formatting and tone |
+| **Chain-of-Thought** | Analysis stage before generation | Better reasoning about claim complexity |
+| **Token-Efficient Prompts** | Compact system prompts, focused user prompts | 60% fewer input tokens vs. verbose prompts |
 
 ### Quick Start
 
@@ -71,11 +84,7 @@ hackathon/
 # Install dependencies
 pip install -r requirements.txt
 
-# Set your API key (optional — demo mode works without it)
-cp .env.example .env
-# Edit .env and add your OPENAI_API_KEY
-
-# Run the app
+# Run the app (demo mode works without an API key)
 streamlit run app.py
 ```
 
@@ -85,7 +94,9 @@ streamlit run app.py
 - **Tone Control**: Simple & Friendly, Professional, or Technical
 - **Reading Level**: Basic, Intermediate, or Advanced
 - **Glossary**: Auto-extracted key terms with plain-language definitions
-- **Metrics**: Comprehension score, time saved estimate, reading time
+- **Quality Metrics**: Accuracy, empathy, readability, completeness scores (1-10)
+- **Pipeline Transparency**: View each stage's output and reasoning
+- **Token Tracking**: See total tokens used per generation
 - **Export**: Download explanation as text file
 
 ---

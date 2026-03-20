@@ -7,11 +7,12 @@ These provide realistic scenarios across different policy types and decisions.
 
 SAMPLE_CLAIMS = [
     {
+        "label": "Denied Health — Out-of-Network",
         "claim_id": "CLM-2024-78432",
         "customer_name": "Maria Santos",
         "policy_type": "Health",
         "claim_amount": 4750.00,
-        "claim_decision": "Denied",
+        "decision": "Denied",
         "decision_reason": (
             "The claim for an MRI and consultation at Lakewood Imaging Center "
             "has been denied because the provider is out-of-network. The "
@@ -32,11 +33,12 @@ SAMPLE_CLAIMS = [
         ),
     },
     {
+        "label": "Partial Auto — Aftermarket Excluded",
         "claim_id": "CLM-2024-91205",
         "customer_name": "James Whitfield",
         "policy_type": "Auto",
         "claim_amount": 12300.00,
-        "claim_decision": "Partially Approved",
+        "decision": "Partially Approved",
         "decision_reason": (
             "The collision claim has been partially approved. The repair costs "
             "for the 2022 Honda Accord have been assessed at $12,300. After "
@@ -57,11 +59,12 @@ SAMPLE_CLAIMS = [
         ),
     },
     {
+        "label": "Approved Home — Water Damage",
         "claim_id": "CLM-2024-63318",
         "customer_name": "Patricia Nguyen",
         "policy_type": "Home",
         "claim_amount": 28500.00,
-        "claim_decision": "Approved",
+        "decision": "Approved",
         "decision_reason": (
             "The claim for water damage resulting from a burst pipe during "
             "the January freeze has been approved in full. The adjuster's "
@@ -83,11 +86,12 @@ SAMPLE_CLAIMS = [
         ),
     },
     {
+        "label": "Under Review Travel — Trip Cancellation",
         "claim_id": "CLM-2024-44890",
         "customer_name": "Robert Chen",
         "policy_type": "Travel",
         "claim_amount": 3200.00,
-        "claim_decision": "Under Review",
+        "decision": "Under Review",
         "decision_reason": (
             "The trip cancellation claim is currently under review. The "
             "claimant canceled a non-refundable trip to Tokyo due to a "
