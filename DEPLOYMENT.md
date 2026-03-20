@@ -19,7 +19,7 @@
 # 1. Clone the repository and switch to the correct branch
 git clone https://github.com/annondeveloper/hackathon.git
 cd hackathon
-git checkout claude/ai-prototype-challenge-oTxa2
+git checkout claude/python-version-oTxa2
 
 # 2. Create and activate a virtual environment
 python -m venv venv
