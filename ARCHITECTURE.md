@@ -1,201 +1,196 @@
-# ClaimClear AI — Architecture Document
+# ClaimClear AI — Architecture
 
 ## 1. System Overview
 
-ClaimClear AI is a GenAI-powered assistant that generates plain-language explanations of insurance claim decisions. The system accepts structured claim data and produces personalized, jargon-free explanations tailored to individual customers.
-
-Two implementations exist:
-1. **Streamlit Prototype** — rapid development, single-process Python app
-2. **Rust + React Production** — high-performance, scalable microservice architecture
-
----
-
-## 2. Streamlit Prototype Architecture
+ClaimClear AI is a Python application that uses a multi-step agentic AI
+pipeline to generate clear, personalized explanations of insurance claim
+decisions. It combines RAG (Retrieval-Augmented Generation), self-evaluation,
+and conditional refinement to produce high-quality output.
 
 ```
-┌─────────────────────────────────────────┐
-│            Streamlit Process            │
-│                                         │
-│  ┌──────────┐  ┌────────────────────┐  │
-│  │ UI Layer │──│ Session State Mgmt │  │
-│  └────┬─────┘  └────────────────────┘  │
-│       │                                 │
-│  ┌────▼──────────────────────────────┐ │
-│  │      Prompt Engineering Layer     │ │
-│  │  - System prompt construction     │ │
-│  │  - User context assembly          │ │
-│  │  - Response parsing (glossary)    │ │
-│  └────┬──────────────────────────────┘ │
-│       │                                 │
-│  ┌────▼──────────────────────────────┐ │
-│  │      OpenAI SDK Integration       │ │
-│  │  - Chat completions API           │ │
-│  │  - Model selection (4o / 4o-mini) │ │
-│  └───────────────────────────────────┘ │
-└─────────────────────────────────────────┘
-```
-
-### Data Flow
-1. User enters claim details in the form
-2. System constructs a structured prompt with claim context + tone/level preferences
-3. OpenAI API generates explanation with embedded glossary
-4. Response is parsed: explanation body separated from glossary section
-5. Results rendered with metrics (comprehension score, time saved)
-
-### Key Design Choices
-- **Single-file app**: Minimal complexity for rapid prototyping
-- **Demo mode**: Pre-built responses allow demonstration without API keys
-- **Delimiter-based parsing**: `---GLOSSARY---` marker enables reliable extraction
-- **Session state**: Maintains results across Streamlit reruns
-
----
-
-## 3. Rust + React Production Architecture
-
-```
-┌────────────────────────┐     ┌─────────────────────────┐
-│    React Frontend      │     │     Rust Backend         │
-│    (Vite + TS)         │     │     (Axum)               │
-│                        │     │                           │
-│  ┌──────────────────┐  │     │  ┌─────────────────────┐ │
-│  │ ClaimForm        │  │     │  │ Route Handlers      │ │
-│  │ Component        │──┼─────┼─▶│ - POST /api/explain │ │
-│  └──────────────────┘  │     │  │ - GET /api/health   │ │
-│                        │ HTTP│  │ - GET /api/samples   │ │
-│  ┌──────────────────┐  │     │  └────────┬────────────┘ │
-│  │ Explanation      │  │     │           │               │
-│  │ Result           │◀─┼─────┼───────────┤               │
-│  └──────────────────┘  │     │  ┌────────▼────────────┐ │
-│                        │     │  │ OpenAI Integration   │ │
-│  ┌──────────────────┐  │     │  │ - Prompt assembly    │ │
-│  │ API Client       │  │     │  │ - HTTP via reqwest   │ │
-│  │ (Axios)          │  │     │  │ - Response parsing   │ │
-│  └──────────────────┘  │     │  └────────┬────────────┘ │
-└────────────────────────┘     │           │               │
-                               │  ┌────────▼────────────┐ │
-                               │  │ Error Handling       │ │
-                               │  │ - Custom AppError    │ │
-                               │  │ - Typed responses    │ │
-                               │  └─────────────────────┘ │
-                               └─────────────────────────┘
-                                           │
-                                    ┌──────▼──────┐
-                                    │  OpenAI API │
-                                    │  (GPT-4o)   │
-                                    └─────────────┘
-```
-
-### Backend Layers
-
-| Layer | Responsibility |
-|-------|---------------|
-| **Router** (main.rs) | Route definitions, CORS, middleware, server binding |
-| **Handlers** (handlers.rs) | Request validation, orchestration, response construction |
-| **OpenAI** (openai.rs) | Prompt engineering, API communication, response parsing |
-| **Models** (models.rs) | Type-safe request/response structures |
-| **Error** (error.rs) | Centralized error handling with proper HTTP status codes |
-
-### Frontend Components
-
-| Component | Purpose |
-|-----------|---------|
-| **Header** | Branding, gradient banner |
-| **ClaimForm** | Input form with validation and sample data loading |
-| **ExplanationResult** | Animated result display with glossary, metrics, export |
-| **Footer** | Attribution and disclaimers |
-
----
-
-## 4. AI Prompt Engineering Strategy
-
-### System Prompt Design Principles
-1. **Role Definition**: Establishes AI as an "insurance claims explanation specialist"
-2. **Personalization**: Requires customer name usage and context-specific language
-3. **Jargon Elimination**: Explicitly instructs to avoid or define technical terms
-4. **Structured Output**: Mandates `---GLOSSARY---` delimiter for reliable parsing
-5. **Tone Matching**: Adapts to requested communication style
-6. **Action-Oriented**: Always includes concrete next steps
-
-### Prompt Template
-```
-System: Role + guidelines + output format
-User:   Claim ID + Customer Name + Policy Type + Amount + Decision
-        + Reason + Terms Referenced + Tone + Reading Level
-```
-
-### Why This Approach Works
-- **Structured input** → consistent, parseable output
-- **Delimiter-based sections** → reliable programmatic extraction
-- **Tone/level parameters** → personalization without multiple prompts
-- **Next steps requirement** → actionable, not just explanatory
-
----
-
-## 5. Scalability Considerations
-
-### Streamlit (Prototype)
-- Suitable for demos and small teams (1-50 concurrent users)
-- Vertical scaling only (bigger server)
-- No caching layer — each request hits OpenAI
-
-### Rust + React (Production)
-- **Horizontal scaling**: Stateless Axum backend behind a load balancer
-- **Connection pooling**: reqwest client with connection reuse
-- **Caching potential**: Redis layer for repeat claim patterns
-- **CDN**: Static React frontend served via CDN
-- **Rate limiting**: Tower middleware for API protection
-- **Estimated throughput**: ~10,000 requests/second per instance (excluding OpenAI latency)
-
-### Future Scaling Path
-```
-                    ┌─────────┐
-                    │   CDN   │
-                    └────┬────┘
-                         │
-                    ┌────▼────┐
-                    │  Load   │
-                    │Balancer │
-                    └────┬────┘
-              ┌──────────┼──────────┐
-              ▼          ▼          ▼
-         ┌────────┐ ┌────────┐ ┌────────┐
-         │ Axum 1 │ │ Axum 2 │ │ Axum N │
-         └───┬────┘ └───┬────┘ └───┬────┘
-             └───────────┼─────────┘
-                    ┌────▼────┐
-                    │  Redis  │
-                    │ (Cache) │
-                    └────┬────┘
-                    ┌────▼────┐
-                    │ OpenAI  │
-                    │   API   │
-                    └─────────┘
+┌─────────────────────────────────────────────────────────────┐
+│                   User (Browser)                             │
+└──────────────────────────┬──────────────────────────────────┘
+                           │ HTTP (localhost:8501)
+┌──────────────────────────▼──────────────────────────────────┐
+│                  Streamlit Process                            │
+│                                                              │
+│   ┌──────────────┐   ┌──────────────┐   ┌──────────────┐   │
+│   │  Claim Form   │   │  Sidebar     │   │  Results     │   │
+│   │  (input)      │   │  (settings)  │   │  (output)    │   │
+│   └──────┬───────┘   └──────────────┘   └──────▲───────┘   │
+│          │                                      │            │
+│   ┌──────▼──────────────────────────────────────┴───────┐   │
+│   │              ClaimExplanationPipeline                 │   │
+│   │                                                      │   │
+│   │  ┌─────────┐  ┌─────────┐  ┌──────────┐  ┌───────┐ │   │
+│   │  │ Analyze │──▶│Generate │──▶│ Evaluate │──▶│Refine │ │   │
+│   │  └─────────┘  └────┬────┘  └──────────┘  └───────┘ │   │
+│   │                     │                                │   │
+│   │              ┌──────▼──────┐                         │   │
+│   │              │ PolicyStore  │                         │   │
+│   │              │ (RAG)        │                         │   │
+│   │              └─────────────┘                         │   │
+│   └──────────────────────────────────────────────────────┘   │
+│          │                                                    │
+└──────────┼────────────────────────────────────────────────────┘
+           │ HTTPS
+┌──────────▼──────────┐
+│   OpenAI API         │
+│   (gpt-4o-mini)      │
+└─────────────────────┘
 ```
 
 ---
 
-## 6. Security Considerations
+## 2. Component Details
+
+### 2.1 Streamlit UI (`app.py`)
+
+| Responsibility | Details |
+|---------------|---------|
+| Claim input | Two-column form: ID, name, type, amount, decision, reason, terms |
+| Sidebar settings | API key (password field), model selector, tone, reading level |
+| Sample loading | Dropdown with 4 pre-built claims for quick testing |
+| Pipeline execution | Calls `ClaimExplanationPipeline.run()` with stage callbacks |
+| Results display | Explanation card, 4 quality metric gauges, glossary accordion |
+| Pipeline transparency | Expandable sections showing each stage's output |
+| Export | Download as `.txt`, copy to clipboard |
+| Demo mode | Pre-built response when no API key is configured |
+
+### 2.2 Agentic Pipeline (`pipeline.py`)
+
+The pipeline is a sequential chain of four specialized LLM calls:
+
+| Stage | Input | Output | Purpose |
+|-------|-------|--------|---------|
+| **Analyze** | Claim data | `AnalysisResult` (complexity, key factors, jargon) | Chain-of-thought reasoning before generation |
+| **Generate** | Claim + Analysis + RAG context + Few-shot | Explanation + glossary | Core explanation generation |
+| **Evaluate** | Claim + Explanation | `EvaluationResult` (4 scores + issues) | Quality gate |
+| **Refine** | Explanation + Evaluation feedback | Improved explanation | Only runs if score < 7/10 |
+
+Each stage uses:
+- **Structured Output** — `response_format: {"type": "json_object"}`
+- **Low temperature** — `0.3` for deterministic, consistent results
+- **Token cap** — `max_tokens: 800` to prevent verbose responses
+
+### 2.3 Policy Store (`policy_store.py`)
+
+RAG-style knowledge retrieval:
+
+| Aspect | Details |
+|--------|---------|
+| Storage | In-memory list of `PolicySection` dataclasses |
+| Content | 20 policy sections across 5 insurance types |
+| Retrieval | Keyword overlap scoring with policy-type boosting |
+| Integration | Called between Analyze and Generate stages |
+| Purpose | Ground explanations in real policy knowledge |
+
+### 2.4 Sample Data (`sample_data.py`)
+
+Four realistic insurance claim scenarios:
+
+| Sample | Type | Decision | Amount |
+|--------|------|----------|--------|
+| Denied Health | Health | Denied | $4,750 |
+| Partial Auto | Auto | Partially Approved | $12,300 |
+| Approved Home | Home | Approved | $28,500 |
+| Under Review Travel | Travel | Under Review | $3,200 |
+
+---
+
+## 3. Data Flow
+
+```
+User fills form
+    │
+    ▼
+ClaimInput dataclass created
+    │
+    ▼
+Stage 1: _analyze(claim) ────────────────────────► OpenAI API
+    │                                                    │
+    ▼                                                    ▼
+AnalysisResult (complexity, key_factors, jargon)   ~200 tokens
+    │
+    ▼
+_retrieve_policy_context(claim) ──────► PolicyStore
+    │                                       │
+    ▼                                       ▼
+RAG context string                    Top-3 matching sections
+    │
+    ▼
+Stage 2: _generate(claim, analysis, rag_context) ─► OpenAI API
+    │   + Few-shot example injected                      │
+    ▼                                                    ▼
+(explanation, glossary)                            ~600 tokens
+    │
+    ▼
+Stage 3: _evaluate(claim, explanation) ───────────► OpenAI API
+    │                                                    │
+    ▼                                                    ▼
+EvaluationResult (4 scores, issues, suggestions)   ~300 tokens
+    │
+    ▼
+overall_score < 7? ──── No ──► Return PipelineResult
+    │
+    Yes
+    │
+    ▼
+Stage 4: _refine(claim, explanation, evaluation) ──► OpenAI API
+    │                                                     │
+    ▼                                                     ▼
+Improved (explanation, glossary)                    ~500 tokens
+    │
+    ▼
+Return PipelineResult
+```
+
+**Typical token usage:** ~1,100 tokens (3 stages, no refinement needed)
+**With refinement:** ~1,600 tokens (4 stages)
+
+---
+
+## 4. LLM Integration
+
+### Request Configuration
+
+| Parameter | Value | Rationale |
+|-----------|-------|-----------|
+| `model` | `gpt-4o-mini` | Best cost/quality for structured output |
+| `temperature` | `0.3` | Deterministic, consistent responses |
+| `max_tokens` | `800` | Prevents verbose output |
+| `response_format` | `{"type": "json_object"}` | Guaranteed valid JSON |
+
+### Prompt Strategy
+
+- **System prompts** are compact (< 100 tokens each)
+- **User prompts** include only essential data
+- **Few-shot example** is injected only in the Generate stage
+- **RAG context** is appended to the user prompt when available
+- Each stage has a dedicated system prompt focused on one task
+
+---
+
+## 5. Security
 
 | Concern | Mitigation |
 |---------|-----------|
-| API key exposure | Keys passed at runtime, never stored in code; env vars only |
-| Prompt injection | Input sanitization; system prompt is isolated from user content |
-| PII in explanations | Customer data stays in-memory; no persistence layer |
-| CORS | Strict origin whitelisting (localhost in dev, specific domains in prod) |
-| Rate limiting | Tower middleware + API key rotation strategy |
-| XSS | React auto-escapes; Streamlit sandboxed rendering |
+| API key exposure | Entered via password field; held in memory only; never logged or persisted |
+| Prompt injection | System prompts are isolated; user input is structured, not free-text |
+| PII handling | No database; claim data is transient in Streamlit session state |
+| Output safety | Explanations are text-only; HTML is sanitized by Streamlit |
 
 ---
 
-## 7. Technology Comparison
+## 6. Production Upgrade Path
 
-| Aspect | Streamlit (Python) | Rust + React |
-|--------|-------------------|-------------|
-| **Development Speed** | ⚡ Very fast (hours) | 🔧 Moderate (days) |
-| **Performance** | Adequate for demos | Production-grade |
-| **Scalability** | Limited | Excellent (horizontal) |
-| **Type Safety** | Runtime errors | Compile-time guarantees |
-| **Memory Usage** | ~100MB+ | ~10MB |
-| **Concurrent Users** | ~50 | ~10,000+ |
-| **Deployment** | Single process | Container-ready microservice |
-| **Best For** | Prototyping, demos | Production deployment |
+| Current (Prototype) | Production |
+|--------------------|-----------|
+| In-memory PolicyStore | Vector DB (Pinecone/Chroma) with embeddings |
+| Keyword retrieval | Semantic search via `text-embedding-3-small` |
+| Streamlit UI | React/Next.js frontend |
+| Single process | FastAPI backend + async workers |
+| No auth | OAuth 2.0 / SSO |
+| No caching | Redis cache for repeated claim patterns |
+| No monitoring | OpenTelemetry + LLM observability (LangSmith/Langfuse) |

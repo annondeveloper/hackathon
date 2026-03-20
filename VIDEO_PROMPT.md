@@ -1,121 +1,120 @@
 # ClaimClear AI — Demo Video Generation Prompt
 
-Use the following prompt with **Google Gemini** (or similar AI video generation tool) to create a professional demo video of ClaimClear AI.
+Use the following prompt with **Google Gemini** or a similar AI video tool
+to create a professional demo video.
 
 ---
 
-## Gemini Video Generation Prompt
+## Video Generation Prompt
 
 ```
-Create a 60-90 second professional product demo video for "ClaimClear AI", an
-AI-powered insurance claim explanation assistant. The video should have a modern,
-clean corporate aesthetic with a blue-to-teal gradient color scheme.
+Create a 60-90 second professional product demo video for "ClaimClear AI",
+an AI-powered insurance claim explanation assistant built with an agentic
+pipeline, RAG grounding, and self-evaluation.
+
+The video should have a modern, clean corporate aesthetic with a blue-to-teal
+gradient color scheme.
 
 VIDEO STRUCTURE:
 
 SCENE 1 (0-10s) — Opening
 - Animated logo reveal: a shield icon with "ClaimClear AI" text
-- Tagline fades in: "Making insurance decisions crystal clear"
-- Background: subtle gradient from deep navy (#0f4c81) to teal (#17a2b8)
-- Soft, professional background music
+- Tagline: "Making insurance decisions crystal clear"
+- Background: gradient from navy (#0f4c81) to teal (#17a2b8)
+- Professional background music
 
 SCENE 2 (10-20s) — The Problem
-- Split screen showing:
-  - Left side: A frustrated customer reading a dense insurance letter full of
-    jargon, with highlighted complex terms like "subrogation", "deductible
-    aggregate", "exclusionary clause"
-  - Right side: A customer service representative on the phone, looking
-    overwhelmed with a long queue
-- Text overlay: "Complex claim decisions → Confused customers → Costly support calls"
+- Split screen:
+  - Left: Customer reading dense insurance letter with highlighted jargon
+    ("subrogation", "contestability", "deductible aggregate")
+  - Right: Customer service rep on phone, long queue indicator
+- Text: "Complex decisions → Confused customers → Costly support calls"
 
-SCENE 3 (20-40s) — The Solution Demo (Streamlit UI)
-- Screen recording style showing the ClaimClear AI Streamlit interface:
-  1. User selects "Denied Health Claim" from sample dropdown
-  2. Form auto-fills with: Claim ID "CLM-2024-78432", Customer "Sarah Johnson",
-     Health policy, $3,200 claim amount
-  3. Decision reason shows: "Out-of-network provider"
-  4. User clicks the blue "Generate Explanation" button
-  5. Loading spinner appears briefly
-  6. Clear, friendly explanation appears in a light blue card
-  7. Show the metrics: Comprehension Score 8.5/10, Time Saved ~12 min
-  8. Show the glossary section with defined terms
+SCENE 3 (20-45s) — The Solution Demo
+- Screen recording of ClaimClear AI Streamlit interface:
+  1. User selects "Denied Health — Out-of-Network" from dropdown
+  2. Form auto-fills: Claim ID, Customer Name, Amount $4,750
+  3. User enters API key in sidebar (show password dots)
+  4. Click "Generate Explanation" button
+  5. Show pipeline stages appearing:
+     "Analyzing claim..." → "Generating (RAG-grounded)..." →
+     "Self-evaluating quality..." → Done
+  6. Clear explanation letter appears in blue card
+  7. Quality metrics: Accuracy 9/10, Empathy 8/10, Readability 9/10
+  8. Glossary section with defined terms
+  9. Expand "Pipeline Details" to show stage-by-stage output
 
-SCENE 4 (40-55s) — The Pro Version
-- Transition to the React + Rust interface showing:
-  1. Modern, beautiful UI with gradient header
-  2. Same claim being processed
-  3. Emphasize the speed (< 1 second response)
-  4. Show the circular comprehension score gauge
-  5. Show expandable glossary accordion
+SCENE 4 (45-60s) — AI Pipeline Architecture
+- Animated flow diagram:
+  Stage 1: ANALYZE (brain icon) → extract key factors
+  Stage 2: GENERATE (document icon) ← RAG context from Policy Store
+  Stage 3: EVALUATE (checkmark icon) → quality scores
+  Stage 4: REFINE (refresh icon) → only if score < 7/10
+- Text: "4-stage agentic pipeline with RAG and self-evaluation"
+- Highlight: "Catches errors before they reach the customer"
 
-SCENE 5 (55-70s) — Key Metrics & Benefits
-- Animated statistics appearing one by one:
-  - "8.5/10 Customer Comprehension Score"
-  - "12 min Average Time Saved per Claim"
-  - "30% Reduction in Support Calls"
-  - "< 5 seconds to Generate Explanation"
-- Icons accompanying each metric
+SCENE 5 (60-75s) — Key Metrics
+- Animated statistics:
+  - "9/10 Accuracy Score" (target icon)
+  - "< 3,000 Tokens per Explanation" (coin icon)
+  - "30% Fewer Support Calls" (phone icon)
+  - "< 10 Seconds to Generate" (clock icon)
 
-SCENE 6 (70-80s) — Architecture Flash
-- Brief animated architecture diagram showing:
-  Customer → UI → AI Engine (OpenAI GPT-4o) → Clear Explanation
-- Two paths: "Prototype (Streamlit)" and "Production (Rust + React)"
-- Emphasize: "Built for demo AND production"
-
-SCENE 7 (80-90s) — Closing
+SCENE 6 (75-90s) — Closing
 - Return to gradient background
-- Logo centered with tagline
-- Text: "Built at the AI Prototype Challenge"
-- "Powered by OpenAI GPT-4o"
+- Logo + tagline centered
+- Text: "Agentic AI · RAG Grounding · Self-Evaluation"
+- "Built at the AI Prototype Challenge"
 - Fade to black
 
-STYLE GUIDELINES:
-- Color palette: Navy (#0f4c81), Teal (#17a2b8), White, Light blue (#f8fbff)
+STYLE:
+- Colors: Navy (#0f4c81), Teal (#17a2b8), White, Light blue (#f8fbff)
 - Font: Clean sans-serif (Inter or similar)
-- Transitions: Smooth fades and slides, no flashy effects
-- Music: Upbeat but professional corporate background track
-- Pace: Moderate, allowing viewers to read text overlays
-- Aspect ratio: 16:9
-- Resolution: 1080p
+- Transitions: Smooth fades and slides
+- Music: Upbeat professional corporate
+- Aspect ratio: 16:9, 1080p
 ```
 
 ---
 
-## Alternative: Slide-Based Video Prompt
+## Screen Recording Guide (Manual Demo)
 
-If full video generation isn't available, use this prompt to generate slides that can be assembled into a video:
+If creating a screen recording instead of a generated video:
 
-```
-Create 7 professional presentation slides for a product demo of "ClaimClear AI",
-an AI insurance claim explanation assistant.
+### Setup
 
-Slide 1: Title — Logo, name, tagline on gradient background
-Slide 2: Problem — Complex jargon, frustrated customers, costly support
-Slide 3: Solution — Screenshot of Streamlit UI with sample explanation
-Slide 4: Pro Version — Screenshot of React UI with modern design
-Slide 5: How It Works — Simple 3-step flow diagram
-Slide 6: Impact Metrics — 4 key statistics with icons
-Slide 7: Closing — Logo, "Built at AI Prototype Challenge"
+1. Open the app in Chrome (clean browser, no bookmarks bar)
+2. Set browser zoom to 90% for optimal capture
+3. Use OBS, Loom, or QuickTime for recording
+4. Resolution: 1920x1080
 
-Use navy-to-teal gradient theme. Clean, modern corporate aesthetic.
-```
+### Recording Script
 
----
+1. **Show the empty app** (2 seconds)
+2. **Select sample claim** — pick "Denied Health — Out-of-Network" (3 seconds)
+3. **Point out sidebar** — model, tone, reading level settings (3 seconds)
+4. **Enter API key** — type or paste in sidebar password field (3 seconds)
+5. **Click "Generate Explanation"** (1 second)
+6. **Show pipeline stages** — each stage status updating in real-time (8 seconds)
+7. **Read the explanation** — scroll through slowly (10 seconds)
+8. **Show quality metrics** — accuracy, empathy, readability, completeness (5 seconds)
+9. **Show glossary** — expand a few terms (5 seconds)
+10. **Expand pipeline details** — show analysis, RAG info, evaluation (10 seconds)
+11. **Click "Download Explanation"** (2 seconds)
+12. **Show token usage** in pipeline stats bar (3 seconds)
 
-## Screen Recording Guide (Manual Demo Video)
+**Total: ~55 seconds.** Add intro/outro slides for a 90-second video.
 
-If creating a screen recording instead:
+### Narration Script
 
-1. **Open the Streamlit app** in Chrome (clean browser, no bookmarks bar)
-2. **Start recording** (OBS or Loom)
-3. **Walk through**:
-   - Show the empty form
-   - Click "Load Sample Claim" (the denied health claim)
-   - Point out the sidebar options (tone, reading level)
-   - Click "Generate Explanation"
-   - Scroll through the results
-   - Highlight the comprehension score
-   - Show the glossary
-   - Click "Download Explanation"
-4. **Narrate** or add voiceover explaining each step
-5. **Keep it under 2 minutes**
+> "ClaimClear AI transforms complex insurance claim decisions into clear
+> explanations that customers can understand.
+>
+> Watch as we load a denied health claim. The AI pipeline analyzes the claim,
+> retrieves relevant policy knowledge, generates a personalized explanation,
+> and then evaluates its own output for quality.
+>
+> The result: a clear letter scoring 9 out of 10 on accuracy, with a
+> glossary of key terms and concrete next steps for the customer.
+>
+> All in under 10 seconds, using fewer than 3,000 tokens."
