@@ -1,5 +1,6 @@
-use axum::{routing::{get, post}, Router};
+use axum::{routing::{delete, get, post}, Router};
 use std::sync::Arc;
+use tokio::sync::RwLock;
 use tower_http::cors::{Any, CorsLayer};
 use tower_http::trace::TraceLayer;
 
@@ -23,13 +24,18 @@ async fn main() {
         )
         .init();
 
-    // Read required configuration from the environment.
-    let api_key = std::env::var("OPENAI_API_KEY").expect(
-        "OPENAI_API_KEY must be set. Create a .env file or export the variable.",
-    );
+    // Read API key from environment if available; otherwise start unconfigured.
+    let api_key = std::env::var("OPENAI_API_KEY").ok();
+    if api_key.is_some() {
+        tracing::info!("OpenAI API key loaded from environment");
+    } else {
+        tracing::warn!(
+            "OPENAI_API_KEY not set — configure it via the Settings UI or set the env var"
+        );
+    }
 
     let state = Arc::new(AppState {
-        openai_api_key: api_key,
+        openai_api_key: RwLock::new(api_key),
     });
 
     // CORS — allow the Vite dev server during development.
@@ -45,6 +51,9 @@ async fn main() {
         .route("/api/explain", post(handlers::explain_claim))
         .route("/api/health", get(handlers::health_check))
         .route("/api/samples", get(handlers::get_samples))
+        .route("/api/config", post(handlers::set_config))
+        .route("/api/config", delete(handlers::delete_config))
+        .route("/api/config/status", get(handlers::get_config_status))
         .layer(cors)
         .layer(TraceLayer::new_for_http())
         .with_state(state);

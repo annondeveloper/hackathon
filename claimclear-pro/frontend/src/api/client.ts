@@ -1,5 +1,5 @@
 import axios from "axios";
-import type { ClaimRequest, ClaimResponse, SampleClaim } from "../types";
+import type { ClaimRequest, ClaimResponse, ConfigStatus, SampleClaim } from "../types";
 
 const api = axios.create({
   baseURL: "/api",
@@ -24,6 +24,21 @@ export async function healthCheck(): Promise<boolean> {
   } catch {
     return false;
   }
+}
+
+export async function getConfigStatus(): Promise<ConfigStatus> {
+  const { data } = await api.get<ConfigStatus>("/config/status");
+  return data;
+}
+
+export async function setApiKey(openai_api_key: string): Promise<ConfigStatus> {
+  const { data } = await api.post<ConfigStatus>("/config", { openai_api_key });
+  return data;
+}
+
+export async function removeApiKey(): Promise<ConfigStatus> {
+  const { data } = await api.delete<ConfigStatus>("/config");
+  return data;
 }
 
 // Fallback demo data when backend is unavailable

@@ -1,16 +1,20 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Header from "./components/Header";
 import ClaimForm from "./components/ClaimForm";
 import ExplanationResult from "./components/ExplanationResult";
+import SettingsModal from "./components/SettingsModal";
 import Footer from "./components/Footer";
 import {
   explainClaim,
   getSamples,
   healthCheck,
+  getConfigStatus,
+  setApiKey,
+  removeApiKey,
   DEMO_RESPONSE,
   DEMO_SAMPLES,
 } from "./api/client";
-import type { ClaimRequest, ClaimResponse, SampleClaim } from "./types";
+import type { ClaimRequest, ClaimResponse, ConfigStatus, SampleClaim } from "./types";
 import { AlertTriangle } from "lucide-react";
 
 export default function App() {
@@ -19,6 +23,17 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [backendOnline, setBackendOnline] = useState<boolean | null>(null);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [configStatus, setConfigStatus] = useState<ConfigStatus | null>(null);
+
+  const refreshConfigStatus = useCallback(async () => {
+    try {
+      const status = await getConfigStatus();
+      setConfigStatus(status);
+    } catch {
+      /* backend offline */
+    }
+  }, []);
 
   useEffect(() => {
     (async () => {
@@ -31,9 +46,10 @@ export default function App() {
         } catch {
           /* use demo samples */
         }
+        await refreshConfigStatus();
       }
     })();
-  }, []);
+  }, [refreshConfigStatus]);
 
   async function handleSubmit(request: ClaimRequest) {
     setLoading(true);
@@ -59,9 +75,30 @@ export default function App() {
     }
   }
 
+  const handleSaveKey = async (key: string) => {
+    await setApiKey(key);
+    await refreshConfigStatus();
+  };
+
+  const handleRemoveKey = async () => {
+    await removeApiKey();
+    await refreshConfigStatus();
+  };
+
   return (
     <div className="min-h-screen flex flex-col">
-      <Header />
+      <Header
+        onSettingsClick={() => setSettingsOpen(true)}
+        keyConfigured={configStatus?.configured ?? false}
+      />
+
+      <SettingsModal
+        open={settingsOpen}
+        onClose={() => setSettingsOpen(false)}
+        configStatus={configStatus}
+        onSave={handleSaveKey}
+        onRemove={handleRemoveKey}
+      />
 
       <main className="flex-1 max-w-6xl mx-auto w-full px-6 py-8 space-y-8">
         {backendOnline === false && (
@@ -71,6 +108,20 @@ export default function App() {
             <span>
               <strong>Demo Mode</strong> — Backend not detected. Showing sample
               explanations. Start the Rust backend for live AI generation.
+            </span>
+          </div>
+        )}
+
+        {backendOnline && !configStatus?.configured && (
+          <div className="flex items-center gap-2 bg-amber-50 border border-amber-200
+                          text-amber-800 px-4 py-3 rounded-lg text-sm">
+            <AlertTriangle className="w-5 h-5 flex-shrink-0" />
+            <span>
+              <strong>API Key Required</strong> — Click the{" "}
+              <button onClick={() => setSettingsOpen(true)} className="underline font-medium">
+                Settings
+              </button>{" "}
+              gear icon to configure your OpenAI API key.
             </span>
           </div>
         )}

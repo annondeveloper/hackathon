@@ -28,6 +28,11 @@ export interface ClaimResponse {
   request_id: string;
 }
 
+export interface ConfigStatus {
+  configured: boolean;
+  masked_key: string;
+}
+
 export interface SampleClaim {
   label: string;
   claim_id: string;

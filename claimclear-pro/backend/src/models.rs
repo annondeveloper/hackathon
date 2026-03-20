@@ -62,6 +62,19 @@ pub struct SamplesResponse {
     pub samples: Vec<SampleClaim>,
 }
 
+// ── Config DTOs ──────────────────────────────────────────────────────
+
+#[derive(Debug, Deserialize)]
+pub struct ConfigRequest {
+    pub openai_api_key: String,
+}
+
+#[derive(Debug, Serialize)]
+pub struct ConfigStatusResponse {
+    pub configured: bool,
+    pub masked_key: String,
+}
+
 // ── OpenAI DTOs ──────────────────────────────────────────────────────
 
 #[derive(Debug, Serialize)]

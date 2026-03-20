@@ -1,18 +1,19 @@
 use axum::{extract::State, Json};
 use chrono::Utc;
 use std::sync::Arc;
+use tokio::sync::RwLock;
 use uuid::Uuid;
 
 use crate::error::AppError;
 use crate::models::{
-    ClaimRequest, ClaimResponse, HealthResponse, SampleClaim, SamplesResponse,
+    ClaimRequest, ClaimResponse, ConfigRequest, ConfigStatusResponse, HealthResponse,
+    SampleClaim, SamplesResponse,
 };
 use crate::openai::{compute_comprehension_score, generate_explanation};
 
 /// Shared application state passed to handlers.
-#[derive(Clone)]
 pub struct AppState {
-    pub openai_api_key: String,
+    pub openai_api_key: RwLock<Option<String>>,
 }
 
 /// POST /api/explain
@@ -48,8 +49,12 @@ pub async fn explain_claim(
     );
 
     // ── Call OpenAI ──────────────────────────────────────────────
+    let api_key = state.openai_api_key.read().await;
+    let api_key = api_key.as_deref().ok_or_else(|| {
+        AppError::Validation("OpenAI API key not configured. Please set it in Settings.".into())
+    })?;
     let (explanation, glossary) =
-        generate_explanation(&state.openai_api_key, &payload).await?;
+        generate_explanation(api_key, &payload).await?;
 
     let processing_time_ms = start.elapsed().as_millis() as u64;
 
@@ -171,4 +176,72 @@ pub async fn get_samples() -> Json<SamplesResponse> {
     ];
 
     Json(SamplesResponse { samples })
+}
+
+/// POST /api/config
+///
+/// Accepts an API key and stores it securely in memory.
+pub async fn set_config(
+    State(state): State<Arc<AppState>>,
+    Json(payload): Json<ConfigRequest>,
+) -> Result<Json<ConfigStatusResponse>, AppError> {
+    let key = payload.openai_api_key.trim().to_string();
+    if key.is_empty() {
+        return Err(AppError::Validation("API key cannot be empty".into()));
+    }
+
+    let mut writer = state.openai_api_key.write().await;
+    *writer = Some(key);
+    drop(writer);
+
+    tracing::info!("OpenAI API key updated via settings UI");
+
+    Ok(Json(ConfigStatusResponse {
+        configured: true,
+        masked_key: mask_key(
+            state.openai_api_key.read().await.as_deref().unwrap_or(""),
+        ),
+    }))
+}
+
+/// GET /api/config/status
+///
+/// Returns whether an API key is configured (never reveals the full key).
+pub async fn get_config_status(
+    State(state): State<Arc<AppState>>,
+) -> Json<ConfigStatusResponse> {
+    let reader = state.openai_api_key.read().await;
+    let (configured, masked) = match reader.as_deref() {
+        Some(k) if !k.is_empty() => (true, mask_key(k)),
+        _ => (false, String::new()),
+    };
+    Json(ConfigStatusResponse {
+        configured,
+        masked_key: masked,
+    })
+}
+
+/// DELETE /api/config
+///
+/// Removes the stored API key from memory.
+pub async fn delete_config(
+    State(state): State<Arc<AppState>>,
+) -> Json<ConfigStatusResponse> {
+    let mut writer = state.openai_api_key.write().await;
+    *writer = None;
+    tracing::info!("OpenAI API key removed via settings UI");
+    Json(ConfigStatusResponse {
+        configured: false,
+        masked_key: String::new(),
+    })
+}
+
+/// Show only the first 3 and last 4 characters of a key.
+fn mask_key(key: &str) -> String {
+    if key.len() <= 8 {
+        return "*".repeat(key.len());
+    }
+    let prefix = &key[..3];
+    let suffix = &key[key.len() - 4..];
+    format!("{}...{}", prefix, suffix)
 }
