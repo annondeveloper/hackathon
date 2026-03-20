@@ -14,6 +14,7 @@ use crate::openai::{compute_comprehension_score, generate_explanation};
 /// Shared application state passed to handlers.
 pub struct AppState {
     pub openai_api_key: RwLock<Option<String>>,
+    pub http_client: reqwest::Client,
 }
 
 /// POST /api/explain
@@ -54,7 +55,7 @@ pub async fn explain_claim(
         AppError::Validation("OpenAI API key not configured. Please set it in Settings.".into())
     })?;
     let (explanation, glossary) =
-        generate_explanation(api_key, &payload).await?;
+        generate_explanation(&state.http_client, api_key, &payload).await?;
 
     let processing_time_ms = start.elapsed().as_millis() as u64;
 

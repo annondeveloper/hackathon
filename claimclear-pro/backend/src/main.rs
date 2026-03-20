@@ -36,6 +36,7 @@ async fn main() {
 
     let state = Arc::new(AppState {
         openai_api_key: RwLock::new(api_key),
+        http_client: reqwest::Client::new(),
     });
 
     // CORS — allow the Vite dev server during development.

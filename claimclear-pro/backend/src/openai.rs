@@ -1,34 +1,23 @@
 use crate::error::AppError;
 use crate::models::{
-    AiExplanationPayload, ClaimRequest, GlossaryTerm, OpenAiMessage, OpenAiRequest, OpenAiResponse,
+    AiExplanationPayload, ClaimRequest, GlossaryTerm, OpenAiMessage, OpenAiRequest,
+    OpenAiResponse, ResponseFormat,
 };
 
-/// Build the system prompt that instructs the AI how to produce the explanation.
+/// Concise system prompt — minimises input tokens while preserving accuracy.
+/// JSON structure is enforced via OpenAI's response_format, so no schema in the prompt.
 fn build_system_prompt() -> String {
-    r#"You are ClaimClear AI, an expert insurance communication specialist. Your mission
-is to translate complex insurance claim decisions into clear, compassionate, and
-easily understandable explanations for policyholders.
+    r#"You are ClaimClear AI. Translate insurance claim decisions into clear customer letters.
 
-GUIDELINES:
-1. Address the customer by name and reference their specific claim.
-2. Clearly state the decision (approved / denied / partially approved).
-3. Explain the reasoning using plain language while remaining accurate.
-4. Reference relevant policy terms, translating jargon into everyday words.
-5. Include next steps the customer can take (appeal, additional documentation, etc.).
-6. Maintain the requested tone and reading level throughout.
-7. Never invent policy terms that were not provided.
-8. Be empathetic — remember the customer may be dealing with a stressful situation.
+Rules:
+- Address the customer by name; reference their claim ID.
+- State the decision, explain why in plain language, cite the provided policy terms only.
+- Suggest concrete next steps (appeal, docs, contact).
+- Match the requested tone and reading level.
+- Do NOT invent policy terms.
 
-OUTPUT FORMAT — you MUST reply with valid JSON and nothing else:
-{
-  "explanation": "<the full explanation as a single string, using paragraphs separated by \\n\\n>",
-  "glossary": [
-    { "term": "<insurance term used>", "definition": "<plain-language definition>" }
-  ]
-}
-
-Include 3-6 glossary terms that appear in the explanation. Pick terms a
-non-expert might find confusing."#
+Reply as JSON: {"explanation":"<letter text, \\n\\n between paragraphs>","glossary":[{"term":"...","definition":"..."}]}
+Include 3–5 glossary entries for jargon a layperson might not know."#
         .to_string()
 }
 
@@ -61,10 +50,10 @@ Target reading level: {reading_level}"#,
 
 /// Call the OpenAI Chat Completions endpoint and return the parsed payload.
 pub async fn generate_explanation(
+    client: &reqwest::Client,
     api_key: &str,
     claim: &ClaimRequest,
 ) -> Result<(String, Vec<GlossaryTerm>), AppError> {
-    let client = reqwest::Client::new();
 
     let body = OpenAiRequest {
         model: "gpt-4o-mini".to_string(),
@@ -78,8 +67,11 @@ pub async fn generate_explanation(
                 content: build_user_prompt(claim),
             },
         ],
-        temperature: 0.5,
-        max_tokens: 1500,
+        temperature: 0.3,
+        max_tokens: 800,
+        response_format: Some(ResponseFormat {
+            r#type: "json_object".to_string(),
+        }),
     };
 
     let response = client

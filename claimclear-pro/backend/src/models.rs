@@ -83,6 +83,13 @@ pub struct OpenAiRequest {
     pub messages: Vec<OpenAiMessage>,
     pub temperature: f64,
     pub max_tokens: u32,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub response_format: Option<ResponseFormat>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct ResponseFormat {
+    pub r#type: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
