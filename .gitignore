@@ -1,0 +1,18 @@
+# Python
+__pycache__/
+*.py[cod]
+venv/
+.env
+
+# Rust
+claimclear-pro/backend/target/
+
+# Node
+claimclear-pro/frontend/node_modules/
+claimclear-pro/frontend/dist/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+.DS_Store
